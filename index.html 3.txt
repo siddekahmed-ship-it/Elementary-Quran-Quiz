@@ -1,0 +1,2221 @@
+Arabic Quiz HTML Code
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arabic Quiz Progress Tracker</title>
+  <style>
+    body {
+      font-family: 'Amiri', 'Noto Naskh Arabic', 'Arial', sans-serif;
+      background: #f7f7fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      font-size: 1.1em;
+    }
+    h1 { margin-top: 30px; color: #2c3e50; }
+    #quiz-box {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(44,62,80,0.12);
+      padding: 30px 24px;
+      margin: 30px 0 20px 0;
+      width: 350px;
+      max-width: 98vw;
+    }
+    #question { font-size: 1.1em; margin-bottom: 18px; }
+    #question b { font-size: 1.5em !important; font-family: 'Amiri', 'Noto Naskh Arabic', serif; }
+    .choices { display: flex; flex-direction: column; gap: 12px; }
+    .choice-btn, #next-btn, #reset-btn {
+      font-size: 1em;
+      padding: 12px 18px;
+      border-radius: 8px;
+      border: 1px solid #16a085;
+      background: #f7f7fa;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 2px;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .choice-btn:hover, #next-btn:hover, #reset-btn:hover { background: #e0f7fa; }
+    .choice-btn.correct { background: #b2f2bb; border-color: #27ae60; }
+    .choice-btn.incorrect { background: #ffb3b3; border-color: #e74c3c; }
+    #progress-bar { width: 100%; background: #eee; border-radius: 8px; height: 16px; margin: 18px 0; }
+    #progress { background: #16a085; height: 100%; border-radius: 8px; transition: width 0.3s; }
+    #stats { margin-bottom: 10px; color: #555; }
+    #next-btn { margin-top: 18px; background: #2c3e50; color: #fff; border: none; }
+    #next-btn:disabled { background: #aaa; }
+    #reset-btn { margin-top: 10px; background: #e74c3c; color: #fff; border: none; }
+    @media (max-width: 600px) {
+      body { font-size: 1.15em; }
+      #quiz-box { width: 98vw; min-width: 0; }
+      #question { font-size: 1.15em; }
+      #question b { font-size: 1.3em !important; }
+      .choice-btn, #next-btn, #reset-btn {
+        font-size: 1.1em;
+        padding: 14px 10px;
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>designed by صديق</h1>
+  <h1>Elementary Quran Quiz</h1>
+  <div id="stats"></div>
+  <div id="progress-bar"><div id="progress"></div></div>
+  <div id="quiz-box">
+    <div id="question"></div>
+    <div class="choices" id="choices"></div>
+    <button id="next-btn" onclick="nextQuestion()" disabled>Next</button>
+    <button id="reset-btn" onclick="resetProgress()">Reset Progress</button>
+  </div>
+  <script>
+    const wordList =
+
+[
+  {
+    "Arabic": "أَهْلٌ",
+    "Root with Vowels": "أَهْلَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Family"
+  },
+  {
+    "Arabic": "أُو۟لَٰئِكَ",
+    "Root with Vowels": "—",
+    "Root Pattern": "—",
+    "Grammatical Form": "Demonstrative pronoun (plural)",
+    "English": "Those"
+  },
+  {
+    "Arabic": "ءَايَةٌ",
+    "Root with Vowels": "ءَيَيَ",
+    "Root Pattern": "فَعْلَة",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "Verse"
+  },
+  {
+    "Arabic": "ءَايَاتٌ",
+    "Root with Vowels": "ءَيَيَ",
+    "Root Pattern": "فَعْلَة",
+    "Grammatical Form": "Noun (fem. plural)",
+    "English": "Verses"
+  },
+  {
+    "Arabic": "أَبٌ",
+    "Root with Vowels": "أَبَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Father"
+  },
+  {
+    "Arabic": "آبَاءُ",
+    "Root with Vowels": "أَبَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Fathers"
+  },
+  {
+    "Arabic": "أَتَى",
+    "Root with Vowels": "أَتَى",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He came"
+  },
+  {
+    "Arabic": "يَأْتِي",
+    "Root with Vowels": "أَتَى",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He comes"
+  },
+  {
+    "Arabic": "أَجْرٌ",
+    "Root with Vowels": "أَجَرَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Reward"
+  },
+  {
+    "Arabic": "أُجُورٌ",
+    "Root with Vowels": "أَجَرَ",
+    "Root Pattern": "فُعُول",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Rewards"
+  },
+  {
+    "Arabic": "أَخَذَ",
+    "Root with Vowels": "أَخَذَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He took"
+  },
+  {
+    "Arabic": "يَأْخُذُ",
+    "Root with Vowels": "أَخَذَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He takes"
+  },
+  {
+    "Arabic": "ٱتَّخَذَ",
+    "Root with Vowels": "أَخَذَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He adopted"
+  },
+  {
+    "Arabic": "يَتَّخِذُ",
+    "Root with Vowels": "أَخَذَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He adopts"
+  },
+  {
+    "Arabic": "بَصَرٌ",
+    "Root with Vowels": "بَصَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Sight"
+  },
+  {
+    "Arabic": "أَبْصَارٌ",
+    "Root with Vowels": "بَصَرَ",
+    "Root Pattern": "أَفْعَال",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Sights"
+  },
+  {
+    "Arabic": "بَصِيرٌ",
+    "Root with Vowels": "بَصَرَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Adjective (active participle)",
+    "English": "All-Seeing"
+  },
+  {
+    "Arabic": "الْآخِرَةُ",
+    "Root with Vowels": "أَخَرَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "The Hereafter"
+  },
+  {
+    "Arabic": "بَعْدَ",
+    "Root with Vowels": "بَعَدَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Preposition",
+    "English": "After"
+  },
+  {
+    "Arabic": "بَعِيدٌ",
+    "Root with Vowels": "بَعَدَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Adjective",
+    "English": "Far"
+  },
+  {
+    "Arabic": "ءَاخَرٌ",
+    "Root with Vowels": "أَخَرَ",
+    "Root Pattern": "أَفْعَل",
+    "Grammatical Form": "Adjective (masc. singular)",
+    "English": "Other"
+  },
+  {
+    "Arabic": "ءَاخَرُونَ",
+    "Root with Vowels": "أَخَرَ",
+    "Root Pattern": "أَفْعَل",
+    "Grammatical Form": "Adjective (masc. plural)",
+    "English": "Others"
+  },
+  {
+    "Arabic": "أُخْرَى",
+    "Root with Vowels": "أَخَرَ",
+    "Root Pattern": "فُعْلَى",
+    "Grammatical Form": "Adjective (fem. singular)",
+    "English": "Other (fem.)"
+  },
+  {
+    "Arabic": "بَعْضٌ",
+    "Root with Vowels": "بَعَضَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Some"
+  },
+  {
+    "Arabic": "الأَرْضُ",
+    "Root with Vowels": "أَرَضَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "The earth"
+  },
+  {
+    "Arabic": "بَيَّنَ",
+    "Root with Vowels": "بَيَنَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He clarified"
+  },
+  {
+    "Arabic": "يُبَيِّنُ",
+    "Root with Vowels": "بَيَنَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He clarifies"
+  },
+  {
+    "Arabic": "بَيِّنَاتٌ",
+    "Root with Vowels": "بَيَنَ",
+    "Root Pattern": "فَعِّيلَات",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Clear signs"
+  },
+  {
+    "Arabic": "إِلٰهٌ",
+    "Root with Vowels": "أَلَهَ",
+    "Root Pattern": "فِعَال",
+    "Grammatical Form": "Noun (singular)",
+    "English": "God"
+  },
+  {
+    "Arabic": "آلِهَةٌ",
+    "Root with Vowels": "أَلَهَ",
+    "Root Pattern": "أَفْعِلَة",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Gods"
+  },
+  {
+    "Arabic": "اللَّهُ",
+    "Root with Vowels": "أَلَهَ",
+    "Root Pattern": "—",
+    "Grammatical Form": "Proper noun",
+    "English": "Allah"
+  },
+  {
+    "Arabic": "ابْنٌ",
+    "Root with Vowels": "بَنَوَ",
+    "Root Pattern": "فِعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Son"
+  },
+  {
+    "Arabic": "أَبْنَاءٌ",
+    "Root with Vowels": "بَنَوَ",
+    "Root Pattern": "أَفْعَال",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Sons"
+  },
+  {
+    "Arabic": "بَنُونَ",
+    "Root with Vowels": "بَنَوَ",
+    "Root Pattern": "فَعُول",
+    "Grammatical Form": "Noun (plural masc.)",
+    "English": "Sons"
+  },
+  {
+    "Arabic": "بَنِينَ",
+    "Root with Vowels": "بَنَوَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Noun (plural masc. acc.)",
+    "English": "Sons"
+  },
+  {
+    "Arabic": "بَنَاتٌ",
+    "Root with Vowels": "بَنَوَ",
+    "Root Pattern": "فَعَلات",
+    "Grammatical Form": "Noun (plural fem.)",
+    "English": "Daughters"
+  },
+  {
+    "Arabic": "أَمِنَ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was secure"
+  },
+  {
+    "Arabic": "يَأْمَنُ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He is secure"
+  },
+  {
+    "Arabic": "أَمِينٌ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Adjective",
+    "English": "Trustworthy"
+  },
+  {
+    "Arabic": "ءَمَنَ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He believed"
+  },
+  {
+    "Arabic": "يُؤْمِنُ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He believes"
+  },
+  {
+    "Arabic": "مُؤْمِنٌ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Noun (active participle masc.)",
+    "English": "Believer (male)"
+  },
+  {
+    "Arabic": "مُؤْمِنُونَ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Noun (masc. plural)",
+    "English": "Believers (male)"
+  },
+  {
+    "Arabic": "مُؤْمِنَةٌ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Noun (active participle fem.)",
+    "English": "Believer (female)"
+  },
+  {
+    "Arabic": "مُؤْمِنَاتٌ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Noun (fem. plural)",
+    "English": "Believers (female)"
+  },
+  {
+    "Arabic": "إِيمَانٌ",
+    "Root with Vowels": "أَمَنَ",
+    "Root Pattern": "فِعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Faith"
+  },
+  {
+    "Arabic": "إِنْسَانُ",
+    "Root with Vowels": "أَنَسَ",
+    "Root Pattern": "فِعْلَان",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Human being"
+  },
+  {
+    "Arabic": "نَاسٌ",
+    "Root with Vowels": "أَنَسَ",
+    "Root Pattern": "فَعَال",
+    "Grammatical Form": "Noun (collective)",
+    "English": "Mankind"
+  },
+  {
+    "Arabic": "حَيَاةٌ",
+    "Root with Vowels": "حَيَيَ",
+    "Root Pattern": "فَعَالَة",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "Life"
+  },
+  {
+    "Arabic": "حَىٌّ",
+    "Root with Vowels": "حَيَيَ",
+    "Root Pattern": "فَعِل",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Living being"
+  },
+  {
+    "Arabic": "أَحْيَاءٌ",
+    "Root with Vowels": "حَيَيَ",
+    "Root Pattern": "أَفْعَال",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Living beings"
+  },
+  {
+    "Arabic": "الْحَيُّ",
+    "Root with Vowels": "حَيَيَ",
+    "Root Pattern": "فَعِل",
+    "Grammatical Form": "Divine name",
+    "English": "The Ever-Living"
+  },
+  {
+    "Arabic": "أَحْيَا",
+    "Root with Vowels": "حَيَيَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He gave life"
+  },
+  {
+    "Arabic": "يُحْيِي",
+    "Root with Vowels": "حَيَيَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He gives life"
+  },
+  {
+    "Arabic": "خَرَجَ",
+    "Root with Vowels": "خَرَجَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He went out"
+  },
+  {
+    "Arabic": "يَخْرُجُ",
+    "Root with Vowels": "خَرَجَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He goes out"
+  },
+  {
+    "Arabic": "خُرُوجٌ",
+    "Root with Vowels": "خَرَجَ",
+    "Root Pattern": "فُعُول",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Exit"
+  },
+  {
+    "Arabic": "أَخْرَجَ",
+    "Root with Vowels": "خَرَجَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He brought forth"
+  },
+  {
+    "Arabic": "يُخْرِجُ",
+    "Root with Vowels": "خَرَجَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He brings forth"
+  },
+  {
+    "Arabic": "إِخْرَاجٌ",
+    "Root with Vowels": "خَرَجَ",
+    "Root Pattern": "إِفْعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Expulsion"
+  },
+  {
+    "Arabic": "خَلَفَ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was behind"
+  },
+  {
+    "Arabic": "يَخْلُفُ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He is behind"
+  },
+  {
+    "Arabic": "خَلْفَ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Preposition",
+    "English": "Behind"
+  },
+  {
+    "Arabic": "خَلَّفَ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He appointed as successor"
+  },
+  {
+    "Arabic": "يُخَلِّفُ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He appoints as successor"
+  },
+  {
+    "Arabic": "خَالَفَ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "فَاعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He disagreed"
+  },
+  {
+    "Arabic": "يُخَالِفُ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "فَاعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He disagrees"
+  },
+  {
+    "Arabic": "اخْتَلَفَ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Verb (past)",
+    "English": "He differed"
+  },
+  {
+    "Arabic": "يَخْتَلِفُ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Verb (present)",
+    "English": "He differs"
+  },
+  {
+    "Arabic": "اخْتِلَافٌ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Disagreement"
+  },
+  {
+    "Arabic": "اسْتَخْلَفَ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "X",
+    "Grammatical Form": "Verb (past)",
+    "English": "He appointed as successor"
+  },
+  {
+    "Arabic": "يَسْتَخْلِفُ",
+    "Root with Vowels": "خَلَفَ",
+    "Root Pattern": "X",
+    "Grammatical Form": "Verb (present)",
+    "English": "He appoints as successor"
+  },
+  {
+    "Arabic": "خَلَقَ",
+    "Root with Vowels": "خَلَقَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He created"
+  },
+  {
+    "Arabic": "يَخْلُقُ",
+    "Root with Vowels": "خَلَقَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He creates"
+  },
+  {
+    "Arabic": "خَلْقٌ",
+    "Root with Vowels": "خَلَقَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Creation"
+  },
+  {
+    "Arabic": "خَالِقٌ",
+    "Root with Vowels": "خَلَقَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Creator"
+  },
+  {
+    "Arabic": "الْخَالِقُ",
+    "Root with Vowels": "خَلَقَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Divine name",
+    "English": "The Creator"
+  },
+  {
+    "Arabic": "خَافَ",
+    "Root with Vowels": "خَوَفَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He feared"
+  },
+  {
+    "Arabic": "يَخَافُ",
+    "Root with Vowels": "خَوَفَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He fears"
+  },
+  {
+    "Arabic": "خَوْفٌ",
+    "Root with Vowels": "خَوَفَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Fear"
+  },
+  {
+    "Arabic": "حِكْمَةٌ",
+    "Root with Vowels": "حَكَمَ",
+    "Root Pattern": "فِعْلَة",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "Wisdom"
+  },
+  {
+    "Arabic": "الْحَكِيمُ",
+    "Root with Vowels": "حَكَمَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Divine name",
+    "English": "The Most Wise"
+  },
+  {
+    "Arabic": "حَكَمَ",
+    "Root with Vowels": "حَكَمَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He judged"
+  },
+  {
+    "Arabic": "يَحْكُمُ",
+    "Root with Vowels": "حَكَمَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He judges"
+  },
+  {
+    "Arabic": "حُكْمٌ",
+    "Root with Vowels": "حَكَمَ",
+    "Root Pattern": "فُعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Judgment"
+  },
+  {
+    "Arabic": "جَزَى",
+    "Root with Vowels": "جَزَيَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He rewarded"
+  },
+  {
+    "Arabic": "يَجْزِي",
+    "Root with Vowels": "جَزَيَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He rewards"
+  },
+  {
+    "Arabic": "جَزَاءٌ",
+    "Root with Vowels": "جَزَيَ",
+    "Root Pattern": "فَعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Reward"
+  },
+  {
+    "Arabic": "جَعَلَ",
+    "Root with Vowels": "جَعَلَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He made"
+  },
+  {
+    "Arabic": "يَجْعَلُ",
+    "Root with Vowels": "جَعَلَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He makes"
+  },
+  {
+    "Arabic": "جَمَعَ",
+    "Root with Vowels": "جَمَعَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He gathered"
+  },
+  {
+    "Arabic": "يَجْمَعُ",
+    "Root with Vowels": "جَمَعَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He gathers"
+  },
+  {
+    "Arabic": "جَمِيعًا",
+    "Root with Vowels": "جَمَعَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Adverbial noun",
+    "English": "Together"
+  },
+  {
+    "Arabic": "أَجْمَعِينَ",
+    "Root with Vowels": "جَمَعَ",
+    "Root Pattern": "أَفْعَلِين",
+    "Grammatical Form": "Noun (plural)",
+    "English": "All together"
+  },
+  {
+    "Arabic": "جَنَّةٌ",
+    "Root with Vowels": "جَنَنَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Garden"
+  },
+  {
+    "Arabic": "جَنَّاتٌ",
+    "Root with Vowels": "جَنَنَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Gardens"
+  },
+  {
+    "Arabic": "الْجَنَّةُ",
+    "Root with Vowels": "جَنَنَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Proper noun",
+    "English": "Paradise"
+  },
+  {
+    "Arabic": "جَاءَ",
+    "Root with Vowels": "جَيَءَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He came"
+  },
+  {
+    "Arabic": "يَجِيءُ",
+    "Root with Vowels": "جَيَءَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He comes"
+  },
+  {
+    "Arabic": "حَتَّى",
+    "Root with Vowels": "حَتَيَ",
+    "Root Pattern": "—",
+    "Grammatical Form": "Particle",
+    "English": "Until"
+  },
+  {
+    "Arabic": "حَسِبَ",
+    "Root with Vowels": "حَسَبَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He thought"
+  },
+  {
+    "Arabic": "يَحْسَبُ",
+    "Root with Vowels": "حَسَبَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He thinks"
+  },
+  {
+    "Arabic": "حِسَابٌ",
+    "Root with Vowels": "حَسَبَ",
+    "Root Pattern": "فِعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Account"
+  },
+  {
+    "Arabic": "حَسَنَ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was good"
+  },
+  {
+    "Arabic": "حَسَنَةٌ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "فَعَلَة",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "Good deed"
+  },
+  {
+    "Arabic": "حَسَنَاتٌ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "فَعَلَة",
+    "Grammatical Form": "Noun (fem. plural)",
+    "English": "Good deeds"
+  },
+  {
+    "Arabic": "أَحْسَنُ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "أَفْعَل",
+    "Grammatical Form": "Adjective (comparative)",
+    "English": "Better"
+  },
+  {
+    "Arabic": "أَحْسَنَ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He did good"
+  },
+  {
+    "Arabic": "يُحْسِنُ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He does good"
+  },
+  {
+    "Arabic": "مُحْسِنٌ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle masc.)",
+    "English": "Doer of good"
+  },
+  {
+    "Arabic": "مُحْسِنُونَ",
+    "Root with Vowels": "حَسَنَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (masc. plural)",
+    "English": "Doers of good"
+  },
+  {
+    "Arabic": "حَقٌّ",
+    "Root with Vowels": "حَقَقَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Truth"
+  },
+  {
+    "Arabic": "الْحَقُّ",
+    "Root with Vowels": "حَقَقَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Divine name",
+    "English": "The Truth"
+  },
+  {
+    "Arabic": "أَحَقُّ",
+    "Root with Vowels": "حَقَقَ",
+    "Root Pattern": "أَفْعَل",
+    "Grammatical Form": "Adjective (comparative)",
+    "English": "More deserving"
+  },
+  {
+    "Arabic": "حَكَمَ",
+    "Root with Vowels": "حَكَمَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He judged"
+  },
+  {
+    "Arabic": "يَحْكُمُ",
+    "Root with Vowels": "حَكَمَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He judges"
+  },
+  {
+    "Arabic": "خَافَ",
+    "Root with Vowels": "خَوَفَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He feared"
+  },
+  {
+    "Arabic": "يَخَافُ",
+    "Root with Vowels": "خَوَفَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He fears"
+  },
+  {
+    "Arabic": "خَوْفٌ",
+    "Root with Vowels": "خَوَفَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Fear"
+  },
+  {
+    "Arabic": "رَأْيٌ",
+    "Root with Vowels": "رَأَيَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Opinion"
+  },
+  {
+    "Arabic": "أَرَى",
+    "Root with Vowels": "رَأَيَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He showed"
+  },
+  {
+    "Arabic": "يُرِي",
+    "Root with Vowels": "رَأَيَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He shows"
+  },
+  {
+    "Arabic": "خَيْرٌ",
+    "Root with Vowels": "خَيَرَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Good"
+  },
+  {
+    "Arabic": "خَيْرٌ مِن",
+    "Root with Vowels": "خَيَرَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Comparative phrase",
+    "English": "Better than"
+  },
+  {
+    "Arabic": "رِيَاءٌ",
+    "Root with Vowels": "رَأَيَ",
+    "Root Pattern": "فِعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Ostentation"
+  },
+  {
+    "Arabic": "خَيْرَاتٌ",
+    "Root with Vowels": "خَيَرَ",
+    "Root Pattern": "فَعْلَات",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Good deeds"
+  },
+  {
+    "Arabic": "رَبٌّ",
+    "Root with Vowels": "رَبَبَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Lord"
+  },
+  {
+    "Arabic": "رَجَعَ",
+    "Root with Vowels": "رَجَعَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He returned"
+  },
+  {
+    "Arabic": "يُرْجِعُ",
+    "Root with Vowels": "رَجَعَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He returns (transitive)"
+  },
+  {
+    "Arabic": "مَرْجِعٌ",
+    "Root with Vowels": "رَجَعَ",
+    "Root Pattern": "مَفْعِل",
+    "Grammatical Form": "Noun (place/time)",
+    "English": "A return"
+  },
+  {
+    "Arabic": "دَخَلَ",
+    "Root with Vowels": "دَخَلَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He entered"
+  },
+  {
+    "Arabic": "يَدْخُلُ",
+    "Root with Vowels": "دَخَلَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He enters"
+  },
+  {
+    "Arabic": "أَدْخَلَ",
+    "Root with Vowels": "دَخَلَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He caused to enter"
+  },
+  {
+    "Arabic": "يُدْخِلُ",
+    "Root with Vowels": "دَخَلَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He causes to enter"
+  },
+  {
+    "Arabic": "رَحِمَ",
+    "Root with Vowels": "رَحَمَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was merciful"
+  },
+  {
+    "Arabic": "يَرْحَمُ",
+    "Root with Vowels": "رَحَمَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He is merciful"
+  },
+  {
+    "Arabic": "رَحْمَةٌ",
+    "Root with Vowels": "رَحَمَ",
+    "Root Pattern": "فَعْلَة",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "Mercy"
+  },
+  {
+    "Arabic": "الرَّحْمَنُ",
+    "Root with Vowels": "رَحَمَ",
+    "Root Pattern": "فَعْلان",
+    "Grammatical Form": "Divine name",
+    "English": "The Most Gracious"
+  },
+  {
+    "Arabic": "الرَّحِيمُ",
+    "Root with Vowels": "رَحَمَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Divine name",
+    "English": "The Most Merciful"
+  },
+  {
+    "Arabic": "الدُّنْيَا",
+    "Root with Vowels": "دَنَوَ",
+    "Root Pattern": "فُعْلَى",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "The world"
+  },
+  {
+    "Arabic": "حَيَاةُ الدُّنْيَا",
+    "Root with Vowels": "ح-ي-ي / د-ن-و",
+    "Root Pattern": "فَعَالَة + فُعْلَى",
+    "Grammatical Form": "Phrase (noun + genitive)",
+    "English": "The life of this world"
+  },
+  {
+    "Arabic": "رَزَقَ",
+    "Root with Vowels": "رَزَقَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He provided"
+  },
+  {
+    "Arabic": "يَرْزُقُ",
+    "Root with Vowels": "رَزَقَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He provides"
+  },
+  {
+    "Arabic": "رِزْقٌ",
+    "Root with Vowels": "رَزَقَ",
+    "Root Pattern": "فِعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Sustenance"
+  },
+  {
+    "Arabic": "الرَّزَّاقُ",
+    "Root with Vowels": "رَزَقَ",
+    "Root Pattern": "فَعَّال",
+    "Grammatical Form": "Divine name",
+    "English": "The Provider"
+  },
+  {
+    "Arabic": "دُونَ",
+    "Root with Vowels": "دَوَنَ",
+    "Root Pattern": "—",
+    "Grammatical Form": "Preposition",
+    "English": "Without"
+  },
+  {
+    "Arabic": "الدِّينُ",
+    "Root with Vowels": "دَيَنَ",
+    "Root Pattern": "فِعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Religion"
+  },
+  {
+    "Arabic": "دَيْنٌ",
+    "Root with Vowels": "دَيَنَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Debt"
+  },
+  {
+    "Arabic": "أَرْسَلَ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He sent"
+  },
+  {
+    "Arabic": "يُرْسِلُ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He sends"
+  },
+  {
+    "Arabic": "مُرْسَلٌ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "مُفْعَل",
+    "Grammatical Form": "Passive participle (singular)",
+    "English": "Messenger (passive)"
+  },
+  {
+    "Arabic": "مُرْسَلُونَ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "مُفْعَل",
+    "Grammatical Form": "Passive participle (plural)",
+    "English": "Messengers (passive)"
+  },
+  {
+    "Arabic": "رَسُولٌ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "فَعُول",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Messenger"
+  },
+  {
+    "Arabic": "رُسُلٌ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "فُعُل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Messengers"
+  },
+  {
+    "Arabic": "رِسَالَةٌ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "فِعَالَة",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Message"
+  },
+  {
+    "Arabic": "رِسَالَاتٌ",
+    "Root with Vowels": "رَسَلَ",
+    "Root Pattern": "فِعَالَة",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Messages"
+  },
+  {
+    "Arabic": "ذَكَرَ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He mentioned"
+  },
+  {
+    "Arabic": "يَذْكُرُ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He mentions"
+  },
+  {
+    "Arabic": "ذِكْرٌ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "فِعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Mention"
+  },
+  {
+    "Arabic": "ذَكَّرَ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He reminded"
+  },
+  {
+    "Arabic": "يُذَكِّرُ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He reminds"
+  },
+  {
+    "Arabic": "تَذَكَّرَ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "تَفَعَّلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He reminded himself"
+  },
+  {
+    "Arabic": "يَتَذَكَّرُ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "تَفَعَّلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He reminds himself"
+  },
+  {
+    "Arabic": "ذَكَرٌ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Noun (masc. singular)",
+    "English": "Male"
+  },
+  {
+    "Arabic": "ذُكُورٌ",
+    "Root with Vowels": "ذَكَرَ",
+    "Root Pattern": "فُعُول",
+    "Grammatical Form": "Noun (masc. plural)",
+    "English": "Males"
+  },
+  {
+    "Arabic": "سَأَلَ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He asked"
+  },
+  {
+    "Arabic": "يَسْأَلُ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He asks"
+  },
+  {
+    "Arabic": "سُؤَالٌ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "فُعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Question"
+  },
+  {
+    "Arabic": "سَائِلٌ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle masc.)",
+    "English": "Questioner"
+  },
+  {
+    "Arabic": "سَائِلُونَ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (masc. plural)",
+    "English": "Questioners"
+  },
+  {
+    "Arabic": "مَسْؤُولٌ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "مَفْعُول",
+    "Grammatical Form": "Passive participle",
+    "English": "One questioned"
+  },
+  {
+    "Arabic": "مَسْؤُولُونَ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "مَفْعُول",
+    "Grammatical Form": "Passive participle plural",
+    "English": "Responsible persons"
+  },
+  {
+    "Arabic": "تَسَاءَلَ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "تَفَاعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "They asked one another"
+  },
+  {
+    "Arabic": "يَتَسَاءَلُ",
+    "Root with Vowels": "سَأَلَ",
+    "Root Pattern": "تَفَاعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "They ask one another"
+  },
+  {
+    "Arabic": "ذُو / ذَا / ذِي",
+    "Root with Vowels": "—",
+    "Root Pattern": "—",
+    "Grammatical Form": "Possessive particle",
+    "English": "Possessor (nom./acc./gen.)"
+  },
+  {
+    "Arabic": "رَأَى",
+    "Root with Vowels": "رَأَيَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He saw"
+  },
+  {
+    "Arabic": "يَرَى",
+    "Root with Vowels": "رَأَيَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He sees"
+  },
+  {
+    "Arabic": "شَهِدَ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He witnessed"
+  },
+  {
+    "Arabic": "يَشْهَدُ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He witnesses"
+  },
+  {
+    "Arabic": "أَشْهَدَ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He made witness"
+  },
+  {
+    "Arabic": "يُشْهِدُ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He makes witness"
+  },
+  {
+    "Arabic": "اِسْتَشْهَدَ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "X",
+    "Grammatical Form": "Verb (past)",
+    "English": "He called as witness"
+  },
+  {
+    "Arabic": "شَهَادَةٌ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "فَعَالَة",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Testimony"
+  },
+  {
+    "Arabic": "شَاهِدٌ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Witness"
+  },
+  {
+    "Arabic": "شَاهِدُونَ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Witnesses"
+  },
+  {
+    "Arabic": "شَهِيدٌ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Noun",
+    "English": "Martyr"
+  },
+  {
+    "Arabic": "شُهَدَاءُ",
+    "Root with Vowels": "شَهَدَ",
+    "Root Pattern": "فُعَلَاء",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Martyrs"
+  },
+  {
+    "Arabic": "أَسْلَمَ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He submitted"
+  },
+  {
+    "Arabic": "يُسْلِمُ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He submits"
+  },
+  {
+    "Arabic": "إِسْلَامٌ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "إِفْعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Submission"
+  },
+  {
+    "Arabic": "الْإِسْلَامُ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "إِفْعَال",
+    "Grammatical Form": "Proper noun",
+    "English": "Islam"
+  },
+  {
+    "Arabic": "مُسْلِمٌ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "مُفْعِل",
+    "Grammatical Form": "Noun (active participle masc.)",
+    "English": "Muslim (male)"
+  },
+  {
+    "Arabic": "مُسْلِمُونَ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "مُفْعِل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Muslims (male)"
+  },
+  {
+    "Arabic": "مُسْلِمَةٌ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "مُفْعِلَة",
+    "Grammatical Form": "Noun (active participle fem.)",
+    "English": "Muslimah"
+  },
+  {
+    "Arabic": "مُسْلِمَاتٌ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "مُفْعِلَة",
+    "Grammatical Form": "Noun (plural fem.)",
+    "English": "Muslim women"
+  },
+  {
+    "Arabic": "سَلَامٌ",
+    "Root with Vowels": "سَلَمَ",
+    "Root Pattern": "فَعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Peace"
+  },
+  {
+    "Arabic": "شَاءَ",
+    "Root with Vowels": "شَيَءَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He willed"
+  },
+  {
+    "Arabic": "يَشَاءُ",
+    "Root with Vowels": "شَيَءَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He wills"
+  },
+  {
+    "Arabic": "سَمِعَ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He heard"
+  },
+  {
+    "Arabic": "يَسْمَعُ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He hears"
+  },
+  {
+    "Arabic": "سَمْعٌ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Hearing"
+  },
+  {
+    "Arabic": "السَّمِيعُ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Divine name",
+    "English": "The All-Hearing"
+  },
+  {
+    "Arabic": "اِسْتَمَعَ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Verb (past)",
+    "English": "He listened"
+  },
+  {
+    "Arabic": "يَسْتَمِعُ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Verb (present)",
+    "English": "He listens"
+  },
+  {
+    "Arabic": "مُسْتَمِعٌ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Listener"
+  },
+  {
+    "Arabic": "مُسْتَمِعُونَ",
+    "Root with Vowels": "سَمَعَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Listeners"
+  },
+  {
+    "Arabic": "صَبَرَ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was patient"
+  },
+  {
+    "Arabic": "يَصْبِرُ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He is patient"
+  },
+  {
+    "Arabic": "صَبْرٌ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Patience"
+  },
+  {
+    "Arabic": "صَابِرٌ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle masc.)",
+    "English": "Steadfast person (male)"
+  },
+  {
+    "Arabic": "صَابِرُونَ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Steadfast people (male)"
+  },
+  {
+    "Arabic": "صَابِرَةٌ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَاعِلَة",
+    "Grammatical Form": "Noun (active participle fem.)",
+    "English": "Steadfast person (female)"
+  },
+  {
+    "Arabic": "صَابِرَاتٌ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَاعِلَة",
+    "Grammatical Form": "Noun (plural fem.)",
+    "English": "Steadfast people (female)"
+  },
+  {
+    "Arabic": "صَبَّارٌ",
+    "Root with Vowels": "صَبَرَ",
+    "Root Pattern": "فَعَّال",
+    "Grammatical Form": "Noun (intensive)",
+    "English": "Very steadfast person"
+  },
+  {
+    "Arabic": "سَاءَ",
+    "Root with Vowels": "سَوَءَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was evil"
+  },
+  {
+    "Arabic": "يَسُوءُ",
+    "Root with Vowels": "سَوَءَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He is evil"
+  },
+  {
+    "Arabic": "سُوءٌ",
+    "Root with Vowels": "سَوَءَ",
+    "Root Pattern": "فُعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Evil"
+  },
+  {
+    "Arabic": "سَيِّئَةٌ",
+    "Root with Vowels": "سَوَءَ",
+    "Root Pattern": "فَعِيلَة",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "Evil deed"
+  },
+  {
+    "Arabic": "سَيِّئَاتٌ",
+    "Root with Vowels": "سَوَءَ",
+    "Root Pattern": "فَعِيلَة",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Evil deeds"
+  },
+  {
+    "Arabic": "صَدَقَ",
+    "Root with Vowels": "صَدَقَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He spoke the truth"
+  },
+  {
+    "Arabic": "يَصْدُقُ",
+    "Root with Vowels": "صَدَقَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He speaks the truth"
+  },
+  {
+    "Arabic": "صِدْقٌ",
+    "Root with Vowels": "صَدَقَ",
+    "Root Pattern": "فِعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Truthfulness"
+  },
+  {
+    "Arabic": "صَادِقٌ",
+    "Root with Vowels": "صَدَقَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Truthful person (male)"
+  },
+  {
+    "Arabic": "صَادِقُونَ",
+    "Root with Vowels": "صَدَقَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Truthful people (male)"
+  },
+  {
+    "Arabic": "صَدَقَةٌ",
+    "Root with Vowels": "صَدَقَ",
+    "Root Pattern": "فَعَلَة",
+    "Grammatical Form": "Noun (fem. singular)",
+    "English": "Charity"
+  },
+  {
+    "Arabic": "صَدَقَاتٌ",
+    "Root with Vowels": "صَدَقَ",
+    "Root Pattern": "فَعَلَة",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Charities"
+  },
+  {
+    "Arabic": "صَلَحَ",
+    "Root with Vowels": "صَلَحَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was righteous"
+  },
+  {
+    "Arabic": "أَصْلَحَ",
+    "Root with Vowels": "صَلَحَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He reformed"
+  },
+  {
+    "Arabic": "يُصْلِحُ",
+    "Root with Vowels": "صَلَحَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He reforms"
+  },
+  {
+    "Arabic": "إِصْلَاحٌ",
+    "Root with Vowels": "صَلَحَ",
+    "Root Pattern": "إِفْعَال",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Reform"
+  },
+  {
+    "Arabic": "صَالِحٌ",
+    "Root with Vowels": "صَلَحَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Righteous person (male)"
+  },
+  {
+    "Arabic": "صَالِحُونَ",
+    "Root with Vowels": "صَلَحَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Righteous people (male)"
+  },
+  {
+    "Arabic": "الصَّالِحَاتُ",
+    "Root with Vowels": "صَلَحَ",
+    "Root Pattern": "فَاعِلَات",
+    "Grammatical Form": "Noun (plural fem.)",
+    "English": "Righteous deeds"
+  },
+  {
+    "Arabic": "أَشْرَكَ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He associated (others with God)"
+  },
+  {
+    "Arabic": "يُشْرِكُ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He associates (others with God)"
+  },
+  {
+    "Arabic": "شِرْكٌ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "فِعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Polytheism"
+  },
+  {
+    "Arabic": "شَرِيكٌ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Partner"
+  },
+  {
+    "Arabic": "شُرَكَاءُ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "فُعَلَاء",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Partners"
+  },
+  {
+    "Arabic": "مُشْرِكٌ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "مُفْعِل",
+    "Grammatical Form": "Noun (active participle masc.)",
+    "English": "Polytheist (male)"
+  },
+  {
+    "Arabic": "مُشْرِكُونَ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "مُفْعِل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Polytheists (male)"
+  },
+  {
+    "Arabic": "مُشْرِكَةٌ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "مُفْعِلَة",
+    "Grammatical Form": "Noun (active participle fem.)",
+    "English": "Polytheist (female)"
+  },
+  {
+    "Arabic": "مُشْرِكَاتٌ",
+    "Root with Vowels": "شَرَكَ",
+    "Root Pattern": "مُفْعِلَة",
+    "Grammatical Form": "Noun (plural fem.)",
+    "English": "Polytheists (female)"
+  },
+  {
+    "Arabic": "عِبَادَةٌ",
+    "Root with Vowels": "عَبَدَ",
+    "Root Pattern": "فِعَالَة",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Worship"
+  },
+  {
+    "Arabic": "عَبَدَ",
+    "Root with Vowels": "عَبَدَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He worshipped"
+  },
+  {
+    "Arabic": "يَعْبُدُ",
+    "Root with Vowels": "عَبَدَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He worships"
+  },
+  {
+    "Arabic": "عَبْدٌ",
+    "Root with Vowels": "عَبَدَ",
+    "Root Pattern": "فَعْل",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Servant"
+  },
+  {
+    "Arabic": "عِبَادٌ",
+    "Root with Vowels": "عَبَدَ",
+    "Root Pattern": "فِعَال",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Servants"
+  },
+  {
+    "Arabic": "عَبِيدٌ",
+    "Root with Vowels": "عَبَدَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Slaves"
+  },
+  {
+    "Arabic": "اعْتَدَى",
+    "Root with Vowels": "عَدَوَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Verb (past)",
+    "English": "He transgressed"
+  },
+  {
+    "Arabic": "يَعْتَدِي",
+    "Root with Vowels": "عَدَوَ",
+    "Root Pattern": "VIII",
+    "Grammatical Form": "Verb (present)",
+    "English": "He transgresses"
+  },
+  {
+    "Arabic": "عَدَاوَةٌ",
+    "Root with Vowels": "عَدَوَ",
+    "Root Pattern": "فَعَالَة",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Enmity"
+  },
+  {
+    "Arabic": "عَدُوٌّ",
+    "Root with Vowels": "عَدَوَ",
+    "Root Pattern": "فَعُول",
+    "Grammatical Form": "Noun (singular)",
+    "English": "Enemy"
+  },
+  {
+    "Arabic": "أَعْدَاءٌ",
+    "Root with Vowels": "عَدَوَ",
+    "Root Pattern": "أَفْعَال",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Enemies"
+  },
+  {
+    "Arabic": "ظَلَمَ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He wronged"
+  },
+  {
+    "Arabic": "يَظْلِمُ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He wrongs"
+  },
+  {
+    "Arabic": "ظُلْمٌ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "فُعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Injustice"
+  },
+  {
+    "Arabic": "ظَالِمٌ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Wrongdoer"
+  },
+  {
+    "Arabic": "ظَالِمُونَ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Wrongdoers"
+  },
+  {
+    "Arabic": "أَظْلَمَ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He darkened"
+  },
+  {
+    "Arabic": "يُظْلِمُ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "أَفْعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He darkens"
+  },
+  {
+    "Arabic": "ظُلُمَاتٌ",
+    "Root with Vowels": "ظَلَمَ",
+    "Root Pattern": "فُعُلَات",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Darknesses"
+  },
+  {
+    "Arabic": "عَلِمَ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He knew"
+  },
+  {
+    "Arabic": "يَعْلَمُ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فَعِلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He knows"
+  },
+  {
+    "Arabic": "عِلْمٌ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فِعْل",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Knowledge"
+  },
+  {
+    "Arabic": "عَالِمٌ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فَاعِل",
+    "Grammatical Form": "Noun (active participle)",
+    "English": "Scholar"
+  },
+  {
+    "Arabic": "عُلَمَاءُ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فُعَلَاء",
+    "Grammatical Form": "Noun (plural)",
+    "English": "Scholars"
+  },
+  {
+    "Arabic": "أَعْلَمُ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "أَفْعَل",
+    "Grammatical Form": "Adjective (comparative)",
+    "English": "More knowledgeable"
+  },
+  {
+    "Arabic": "مَعْلُومٌ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "مَفْعُول",
+    "Grammatical Form": "Passive participle",
+    "English": "Known"
+  },
+  {
+    "Arabic": "الْعَلِيمُ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Divine name",
+    "English": "The All-Knowing"
+  },
+  {
+    "Arabic": "عَلَّمَ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He taught"
+  },
+  {
+    "Arabic": "يُعَلِّمُ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He teaches"
+  },
+  {
+    "Arabic": "تَعَلَّمَ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "تَفَعَّلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He learned"
+  },
+  {
+    "Arabic": "يَتَعَلَّمُ",
+    "Root with Vowels": "عَلَمَ",
+    "Root Pattern": "تَفَعَّلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He learns"
+  },
+  {
+    "Arabic": "اسْتَكْبَرَ",
+    "Root with Vowels": "كَبَرَ",
+    "Root Pattern": "X",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was arrogant"
+  },
+  {
+    "Arabic": "يَسْتَكْبِرُ",
+    "Root with Vowels": "كَبَرَ",
+    "Root Pattern": "X",
+    "Grammatical Form": "Verb (present)",
+    "English": "He is arrogant"
+  },
+  {
+    "Arabic": "اسْتِكْبَارٌ",
+    "Root with Vowels": "كَبَرَ",
+    "Root Pattern": "X",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Arrogance"
+  },
+  {
+    "Arabic": "كَبُرَ",
+    "Root with Vowels": "كَبَرَ",
+    "Root Pattern": "فَعُلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was great"
+  },
+  {
+    "Arabic": "كَبِيرٌ",
+    "Root with Vowels": "كَبَرَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Adjective",
+    "English": "Great"
+  },
+  {
+    "Arabic": "أَكْبَرُ",
+    "Root with Vowels": "كَبَرَ",
+    "Root Pattern": "أَفْعَل",
+    "Grammatical Form": "Adjective (comparative)",
+    "English": "Greater"
+  },
+  {
+    "Arabic": "قَدَرَ",
+    "Root with Vowels": "قَدَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He was able"
+  },
+  {
+    "Arabic": "يَقْدِرُ",
+    "Root with Vowels": "قَدَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He is able"
+  },
+  {
+    "Arabic": "قَدَّرَ",
+    "Root with Vowels": "قَدَرَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (past)",
+    "English": "He determined"
+  },
+  {
+    "Arabic": "يُقَدِّرُ",
+    "Root with Vowels": "قَدَرَ",
+    "Root Pattern": "فَعَّلَ",
+    "Grammatical Form": "Verb (present)",
+    "English": "He determines"
+  },
+  {
+    "Arabic": "قَدَرٌ",
+    "Root with Vowels": "قَدَرَ",
+    "Root Pattern": "فَعَلَ",
+    "Grammatical Form": "Noun (verbal noun)",
+    "English": "Destiny"
+  },
+  {
+    "Arabic": "الْقَدِيرُ",
+    "Root with Vowels": "قَدَرَ",
+    "Root Pattern": "فَعِيل",
+    "Grammatical Form": "Divine name",
+    "English": "The All-Powerful"
+  }
+]
+
+
+
+
+    let quizWords = [], mastered = [], wrongCount = 0;
+    let currentIdx = 0, currentQ = null, answered = false, wrongThisQuestion = false;
+    const totalQuestions = 3;
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function startQuiz() {
+      quizWords = shuffle([...wordList]).slice(0, totalQuestions);
+      mastered = [];
+      wrongCount = 0;
+      currentIdx = 0;
+      showQuestion();
+    }
+
+    function updateStats() {
+      document.getElementById('stats').textContent =
+        `Answered: ${currentIdx} / ${totalQuestions} | Mastered: ${mastered.length} | Wrong answers: ${wrongCount}`;
+      document.getElementById('progress').style.width = ((currentIdx/totalQuestions)*100) + '%';
+    }
+
+    function pickQuestion() {
+      if (currentIdx >= totalQuestions) return null;
+      const word = quizWords[currentIdx];
+      const qType = Math.ceil(Math.random()*6);
+      let question = {}, choices = [], answer = "";
+
+      if (qType === 6) {
+        question.text = `Type the English meaning of <b style='font-size:2em;color:#16a085'>${word.Arabic}</b>:`;
+        answer = word.English;
+        question.inputType = true;
+      } else {
+        question.text = `What is the meaning of <b style='font-size:2em;color:#16a085'>${word.Arabic}</b>?`;
+        answer = word.English;
+        choices = shuffle(wordList.map(w => w.English).filter(e => e !== answer)).slice(0,2);
+        choices.push(answer);
+        choices = shuffle(choices);
+        question.choices = choices;
+      }
+      question.answer = answer;
+      question.word = word;
+      question.qType = qType;
+      return question;
+    }
+
+    function showQuestion() {
+      updateStats();
+      wrongThisQuestion = false;
+      currentQ = pickQuestion();
+      if (!currentQ) {
+        document.getElementById('question').innerHTML =
+          `<b>Quiz complete!</b><br>Mastered: ${mastered.length} / ${totalQuestions}<br>Wrong answers: ${wrongCount}<br><button onclick='startQuiz()' style='font-size:1.2em;padding:14px 28px;margin-top:16px;'>Restart Quiz</button>`;
+        document.getElementById('choices').innerHTML = "";
+        document.getElementById('next-btn').disabled = true;
+        return;
+      }
+      document.getElementById('question').innerHTML = currentQ.text;
+      const choicesDiv = document.getElementById('choices');
+      choicesDiv.innerHTML = "";
+
+      if (currentQ.inputType) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Type your answer here';
+        input.style.padding = '10px';
+        input.style.fontSize = '1em';
+        input.style.borderRadius = '6px';
+        input.style.border = '1px solid #ccc';
+        input.id = 'text-answer';
+
+        const submitBtn = document.createElement('button');
+        submitBtn.textContent = 'Submit';
+        submitBtn.style.marginTop = '10px';
+        submitBtn.className = 'choice-btn';
+        submitBtn.onclick = () => checkTypedAnswer(input.value.trim());
+
+        choicesDiv.appendChild(input);
+        choicesDiv.appendChild(submitBtn);
+      } else {
+        currentQ.choices.forEach(choice => {
+          const btn = document.createElement('button');
+          btn.className = "choice-btn";
+          btn.innerHTML = choice;
+          btn.onclick = () => selectAnswer(btn, choice);
+          choicesDiv.appendChild(btn);
+        });
+      }
+      document.getElementById('next-btn').disabled = true;
+      answered = false;
+    }
+
+    function selectAnswer(btn, choice) {
+      if (answered) return;
+      answered = true;
+      const correct = choice === currentQ.answer;
+      btn.classList.add(correct ? "correct" : "incorrect");
+      Array.from(document.getElementsByClassName('choice-btn')).forEach(b => {
+        if (b.innerHTML === currentQ.answer) b.classList.add("correct");
+        b.disabled = true;
+      });
+      if (correct && !mastered.includes(currentIdx)) mastered.push(currentIdx);
+      if (!correct && !wrongThisQuestion) wrongCount++;
+      document.getElementById('next-btn').disabled = false;
+      updateStats();
+    }
+
+    function checkTypedAnswer(userInput) {
+      if (answered) return;
+      answered = true;
+      const correct = userInput.toLowerCase() === currentQ.answer.toLowerCase();
+      if (correct && !mastered.includes(currentIdx)) mastered.push(currentIdx);
+      if (!correct && !wrongThisQuestion) wrongCount++;
+      const feedback = document.createElement('div');
+      feedback.innerHTML = correct
+        ? `<span style='color:green;font-weight:bold;'>Correct!</span>`
+        : `<span style='color:red;font-weight:bold;'>Incorrect. Correct answer: ${currentQ.answer}</span>`;
+      document.getElementById('choices').appendChild(feedback);
+      document.getElementById('next-btn').disabled = false;
+      updateStats();
+    }
+
+    function nextQuestion() {
+      currentIdx++;
+      showQuestion();
+    }
+
+    function resetProgress() {
+      startQuiz();
+    }
+
+    startQuiz();
+  </script>
+</body>
+</html>
